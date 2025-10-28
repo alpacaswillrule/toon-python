@@ -372,32 +372,25 @@ Four datasets designed to test different structural patterns:
 ## Installation
 
 ```bash
-# npm
-npm install @byjohann/toon
-
-# pnpm
-pnpm add @byjohann/toon
-
-# yarn
-yarn add @byjohann/toon
+pip install toon
 ```
 
 ## Quick Start
 
-```ts
-import { encode } from '@byjohann/toon'
+```python
+from toon import encode
 
-const data = {
-  user: {
-    id: 123,
-    name: 'Ada',
-    tags: ['reading', 'gaming'],
-    active: true,
-    preferences: []
-  }
+data = {
+    "user": {
+        "id": 123,
+        "name": "Ada",
+        "tags": ["reading", "gaming"],
+        "active": True,
+        "preferences": [],
+    },
 }
 
-console.log(encode(data))
+print(encode(data))
 ```
 
 Output:
@@ -434,11 +427,13 @@ TOON formatting is deterministic and minimal:
 
 Simple objects with primitive values:
 
-```ts
+```python
+from toon import encode
+
 encode({
-  id: 123,
-  name: 'Ada',
-  active: true
+    "id": 123,
+    "name": "Ada",
+    "active": True,
 })
 ```
 
@@ -450,12 +445,14 @@ active: true
 
 Nested objects:
 
-```ts
+```python
+from toon import encode
+
 encode({
-  user: {
-    id: 123,
-    name: 'Ada'
-  }
+    "user": {
+        "id": 123,
+        "name": "Ada",
+    },
 })
 ```
 
@@ -472,9 +469,11 @@ user:
 
 #### Primitive Arrays (Inline)
 
-```ts
+```python
+from toon import encode
+
 encode({
-  tags: ['admin', 'ops', 'dev']
+    "tags": ["admin", "ops", "dev"],
 })
 ```
 
@@ -486,12 +485,14 @@ tags[3]: admin,ops,dev
 
 When all objects share the same primitive fields, TOON uses an efficient **tabular format**:
 
-```ts
+```python
+from toon import encode
+
 encode({
-  items: [
-    { sku: 'A1', qty: 2, price: 9.99 },
-    { sku: 'B2', qty: 1, price: 14.5 }
-  ]
+    "items": [
+        {"sku": "A1", "qty": 2, "price": 9.99},
+        {"sku": "B2", "qty": 1, "price": 14.5},
+    ],
 })
 ```
 
@@ -503,17 +504,19 @@ items[2]{sku,qty,price}:
 
 **Tabular formatting applies recursively:** nested arrays of objects (whether as object properties or inside list items) also use tabular format if they meet the same requirements.
 
-```ts
+```python
+from toon import encode
+
 encode({
-  items: [
-    {
-      users: [
-        { id: 1, name: 'Ada' },
-        { id: 2, name: 'Bob' }
-      ],
-      status: 'active'
-    }
-  ]
+    "items": [
+        {
+            "users": [
+                {"id": 1, "name": "Ada"},
+                {"id": 2, "name": "Bob"},
+            ],
+            "status": "active",
+        }
+    ],
 })
 ```
 
@@ -554,12 +557,14 @@ items[2]:
 
 When you have arrays containing primitive inner arrays:
 
-```ts
+```python
+from toon import encode
+
 encode({
-  pairs: [
-    [1, 2],
-    [3, 4]
-  ]
+    "pairs": [
+        [1, 2],
+        [3, 4],
+    ],
 })
 ```
 
@@ -573,11 +578,13 @@ pairs[2]:
 
 Empty containers have special representations:
 
-```ts
-encode({ items: [] }) // items[0]:
-encode([]) // [0]:
-encode({}) // (empty output)
-encode({ config: {} }) // config:
+```python
+from toon import encode
+
+encode({"items": []})      # 'items[0]:'
+encode([])                 # '[0]:'
+encode({})                 # ''
+encode({"config": {}})     # 'config:'
 ```
 
 ### Quoting Rules
@@ -635,43 +642,43 @@ Some non-JSON types are automatically normalized for LLM-safe output:
 
 | Input | Output |
 |---|---|
-| Number (finite) | Decimal form, no scientific notation (e.g., `-0` → `0`, `1e6` → `1000000`) |
-| Number (`NaN`, `±Infinity`) | `null` |
-| `BigInt` | Decimal digits (no quotes) |
-| `Date` | ISO string in quotes (e.g., `"2025-01-01T00:00:00.000Z"`) |
-| `undefined` | `null` |
-| `function` | `null` |
-| `symbol` | `null` |
+| `float("-0.0")` | `0` |
+| `float("nan")`, `float("inf")`, `float("-inf")` | `null` |
+| `datetime`, `date` | ISO 8601 string (e.g., `"2025-01-01T00:00:00+00:00"`) |
+| `set` | Array with normalized elements |
+| `Mapping` | Object with stringified keys |
+| Custom objects with `__dict__` | Object of normalized attributes |
+| Unsupported types (functions, bytes, generators, etc.) | `null` |
 
 ## API
 
-### `encode(value: unknown, options?: EncodeOptions): string`
+### `encode(value: Any, options: EncodeOptions | Mapping[str, Any] | None = None) -> str`
 
-Converts any JSON-serializable value to TOON format.
+Converts Python data structures into TOON format.
 
 **Parameters:**
 
-- `value` – Any JSON-serializable value (object, array, primitive, or nested structure). Non-JSON-serializable values (functions, symbols, undefined, non-finite numbers) are converted to `null`. Dates are converted to ISO strings, and BigInts are emitted as decimal integers (no quotes).
-- `options` – Optional encoding options:
-  - `indent?: number` – Number of spaces per indentation level (default: `2`)
-  - `delimiter?: ',' | '\t' | '|'` – Delimiter for array values and tabular rows (default: `','`)
-  - `lengthMarker?: '#' | false` – Optional marker to prefix array lengths (default: `false`)
+- `value` – Any JSON-compatible structure (dict, list/tuple, primitive) or nested combination. Unsupported values (functions, generators, non-finite floats) normalize to `null`. Dates become ISO strings; sets become arrays.
+- `options` – Optional encoding configuration:
+  - `indent` – Number of spaces per indentation level (default: `2`)
+  - `delimiter` – Delimiter for array values and tabular rows (`","`, `"\t"`, or `"|"`; default: `","`)
+  - `length_marker` – Optional marker to prefix array lengths (`"#"` or `False`; default: `False`)
 
 **Returns:**
 
-A TOON-formatted string with no trailing newline or spaces.
+A TOON-formatted string with no trailing newline or trailing spaces.
 
 **Example:**
 
-```ts
-import { encode } from '@byjohann/toon'
+```python
+from toon import encode
 
-const items = [
-  { sku: 'A1', qty: 2, price: 9.99 },
-  { sku: 'B2', qty: 1, price: 14.5 }
+items = [
+    {"sku": "A1", "qty": 2, "price": 9.99},
+    {"sku": "B2", "qty": 1, "price": 14.5},
 ]
 
-encode({ items })
+print(encode({"items": items}))
 ```
 
 **Output:**
@@ -690,15 +697,17 @@ The `delimiter` option allows you to choose between comma (default), tab, or pip
 
 Using tab delimiters instead of commas can reduce token count further, especially for tabular data:
 
-```ts
-const data = {
-  items: [
-    { sku: 'A1', name: 'Widget', qty: 2, price: 9.99 },
-    { sku: 'B2', name: 'Gadget', qty: 1, price: 14.5 }
-  ]
+```python
+from toon import encode
+
+data = {
+    "items": [
+        {"sku": "A1", "name": "Widget", "qty": 2, "price": 9.99},
+        {"sku": "B2", "name": "Gadget", "qty": 1, "price": 14.5},
+    ],
 }
 
-encode(data, { delimiter: '\t' })
+print(encode(data, {"delimiter": "\t"}))
 ```
 
 **Output:**
@@ -724,8 +733,10 @@ items[2	]{sku	name	qty	price}:
 
 Pipe delimiters offer a middle ground between commas and tabs:
 
-```ts
-encode(data, { delimiter: '|' })
+```python
+from toon import encode
+
+print(encode(data, {"delimiter": "|"}))
 ```
 
 **Output:**
@@ -738,29 +749,31 @@ items[2|]{sku|name|qty|price}:
 
 #### Length Marker Option
 
-The `lengthMarker` option adds an optional hash (`#`) prefix to array lengths to emphasize that the bracketed value represents a count, not an index:
+The `length_marker` option adds an optional hash (`#`) prefix to array lengths to emphasize that the bracketed value represents a count, not an index:
 
-```ts
-const data = {
-  tags: ['reading', 'gaming', 'coding'],
-  items: [
-    { sku: 'A1', qty: 2, price: 9.99 },
-    { sku: 'B2', qty: 1, price: 14.5 },
-  ],
+```python
+from toon import encode
+
+data = {
+    "tags": ["reading", "gaming", "coding"],
+    "items": [
+        {"sku": "A1", "qty": 2, "price": 9.99},
+        {"sku": "B2", "qty": 1, "price": 14.5},
+    ],
 }
 
-encode(data, { lengthMarker: '#' })
-// tags[#3]: reading,gaming,coding
-// items[#2]{sku,qty,price}:
-//   A1,2,9.99
-//   B2,1,14.5
+print(encode(data, {"length_marker": "#"}))
+# tags[#3]: reading,gaming,coding
+# items[#2]{sku,qty,price}:
+#   A1,2,9.99
+#   B2,1,14.5
 
-// Works with custom delimiters
-encode(data, { lengthMarker: '#', delimiter: '|' })
-// tags[#3|]: reading|gaming|coding
-// items[#2|]{sku|qty|price}:
-//   A1|2|9.99
-//   B2|1|14.5
+# Works with custom delimiters
+print(encode(data, {"length_marker": "#", "delimiter": "|"}))
+# tags[#3|]: reading|gaming|coding
+# items[#2|]{sku|qty|price}:
+#   A1|2|9.99
+#   B2|1|14.5
 ```
 
 ## Notes and Limitations
@@ -802,49 +815,49 @@ Task: Return only users with role "user" as TOON. Use the same header. Set [N] t
 ```
 
 > [!TIP]
-> For large uniform tables, use `encode(data, { delimiter: '\t' })` and tell the model "fields are tab-separated." Tabs often tokenize better than commas and reduce the need for quote-escaping.
+> For large uniform tables, use `encode(data, {"delimiter": "\t"})` and tell the model "fields are tab-separated." Tabs often tokenize better than commas and reduce the need for quote-escaping.
 
 ## Quick Reference
 
-```
-// Object
-{ id: 1, name: 'Ada' }          → id: 1
-                                  name: Ada
+```text
+# Object
+{"id": 1, "name": "Ada"}          → id: 1
+                                     name: Ada
 
-// Nested object
-{ user: { id: 1 } }             → user:
-                                    id: 1
+# Nested object
+{"user": {"id": 1}}               → user:
+                                     id: 1
 
-// Primitive array (inline)
-{ tags: ['foo', 'bar'] }        → tags[2]: foo,bar
+# Primitive array (inline)
+{"tags": ["foo", "bar"]}          → tags[2]: foo,bar
 
-// Tabular array (uniform objects)
-{ items: [                      → items[2]{id,qty}:
-  { id: 1, qty: 5 },                1,5
-  { id: 2, qty: 3 }                 2,3
+# Tabular array (uniform objects)
+{"items": [                       → items[2]{id,qty}:
+    {"id": 1, "qty": 5},              1,5
+    {"id": 2, "qty": 3}               2,3
 ]}
 
-// Mixed / non-uniform (list)
-{ items: [1, { a: 1 }, 'x'] }   → items[3]:
-                                    - 1
-                                    - a: 1
-                                    - x
+# Mixed / non-uniform (list)
+{"items": [1, {"a": 1}, "x"]}     → items[3]:
+                                     - 1
+                                     - a: 1
+                                     - x
 
-// Array of arrays
-{ pairs: [[1, 2], [3, 4]] }     → pairs[2]:
-                                    - [2]: 1,2
-                                    - [2]: 3,4
+# Array of arrays
+{"pairs": [[1, 2], [3, 4]]}       → pairs[2]:
+                                     - [2]: 1,2
+                                     - [2]: 3,4
 
-// Root array
-['x', 'y']                      → [2]: x,y
+# Root array
+["x", "y"]                        → [2]: x,y
 
-// Empty containers
-{}                              → (empty output)
-{ items: [] }                   → items[0]:
+# Empty containers
+{}                                → (empty output)
+{"items": []}                     → items[0]:
 
-// Special quoting
-{ note: 'hello, world' }        → note: "hello, world"
-{ items: ['true', true] }       → items[2]: "true",true
+# Special quoting
+{"note": "hello, world"}          → note: "hello, world"
+{"items": ["true", True]}         → items[2]: "true",true
 ```
 
 ## Ports in Other Languages
