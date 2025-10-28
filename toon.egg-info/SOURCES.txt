@@ -1,0 +1,15 @@
+LICENSE
+README.md
+pyproject.toml
+tests/test_encode.py
+toon/__init__.py
+toon/constants.py
+toon/encoders.py
+toon/normalize.py
+toon/primitives.py
+toon/types.py
+toon/writer.py
+toon.egg-info/PKG-INFO
+toon.egg-info/SOURCES.txt
+toon.egg-info/dependency_links.txt
+toon.egg-info/top_level.txt

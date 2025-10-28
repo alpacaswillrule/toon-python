@@ -3,14 +3,14 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "toon"
+name = "toon-encoder"
 version = "0.1.0"
 description = "Token-Oriented Object Notation encoder for Python"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
 authors = [
-  { name = "Johann Schopplich" }
+  { name = "Johan Vlassak" }
 ]
 classifiers = [
   "License :: OSI Approved :: MIT License",
@@ -24,8 +24,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/johannschopplich/toon"
-Repository = "https://github.com/johannschopplich/toon"
+Homepage = "https://github.com/alpacaswillrule/toon-python?tab=readme-ov-file"
+Repository = "https://github.com/alpacaswillrule/toon-python?tab=readme-ov-file"
 
 [tool.setuptools]
 packages = ["toon"]
